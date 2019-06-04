@@ -173,15 +173,76 @@ class Board:
     """Board handles the display of the tic-tac-toe board state.
     """
 
-    def __init__(self, size=200):
-        self.positions = ["-"] * 10
+    def __init__(self):
+        pass
 
-    def display(self, humanAgent=True):
+    def display(self, positions, humanAgent=True):
         from os import system
 
         system("clear")
         for i in range(3):
-            print("\t".join(self.positions[1 + i * 3 : 1 + i * 3 + 3]))
+            print("\t".join(positions[1 + i * 3 : 1 + i * 3 + 3]))
+
+
+class Game:
+    def __init__(self, board, x, o, watcher=False, debug=True):
+        self.positions = ["-"]*10
+        self.board = board
+        self.playerX = x
+        self.playerO = o
+        self.human = x.human or o.human
+        self.playerX.move_history = {}
+        self.playerO.move_history = {}
+        self.watcher = watcher
+        self.debug = debug
+
+    def play(self):
+        import time
+
+        turn = 1
+        if self.watcher:
+            time.sleep(1.5)
+            self.board.display(self.positions)
+
+        while turn < 10:
+            if turn % 2 == 1:
+                move = self.playerX.mover(self.positions)
+                if self.update(move, self.playerX.piece):
+                    move = int(move)
+                    temp = self.positions[:]
+                    temp[move] = "-"
+                    self.playerX.move_history[tuple(temp)] = move
+                else:
+                    continue
+            else:
+                move = self.playerO.mover(self.positions)
+                if self.update(move, self.playerO.piece):
+                    move = int(move)
+                    temp = self.positions[:]
+                    temp[move] = "-"
+                    self.playerO.move_history[tuple(temp)] = move
+                else:
+                    continue
+
+            self.win = self.is_win()
+            if self.watcher:
+                time.sleep(1.5)
+                self.board.display(self.positions)
+            if self.win:
+                break
+            turn += 1
+
+        if self.watcher:
+            if not self.win:
+                print("It was a tie")
+            else:
+                print(self.win[1], " wins!!")
+
+        self.playerX.update(self.win)
+        self.playerO.update(self.win)
+
+        if self.watcher:
+            time.sleep(1.5)
 
     def update(self, move, piece):
         # check for clashes
@@ -189,15 +250,30 @@ class Board:
             move = int(move)
             assert move >= 1 and move <= 9
         except:
-            print("That was probably not a valid move, try again")
-            return False
-        if self.positions[move] != "-":
-            print(move, self.positions)
-            raise ValueError("That space is filled")
-            return False
+            if self.debug:
+                self.debugHandler(move)
+                raise ValueError("Invalid move. Move must be a number between 1 and 9.")
+            else:
+                print("That was an invalid move, try again")
+                return False
+
+        try:
+            assert self.positions[move] == "-"
+        except:
+            if self.debug:
+                self.debugHandler(move)
+                raise ValueError((move, self.positions, "Space was filled"))           
+            else:
+                print("Space filled, try again")
+                return False
         else:
             self.positions[move] = piece
             return True
+
+    def debugHandler(self, move):
+        self.board.display(self.positions)
+        print("A bad move was made -- here is the error report")
+        print("Move:\t", move)
 
     def is_win(self):
         winners = (
@@ -217,67 +293,8 @@ class Board:
         return False
 
 
-class Game:
-    def __init__(self, board, x, o, watcher=False):
-        self.board = board
-        self.playerX = x
-        self.playerO = o
-        self.human = x.human or o.human
-        self.playerX.move_history = {}
-        self.playerO.move_history = {}
-        self.watcher = watcher
-
-    def play(self):
-        import time
-
-        turn = 1
-        if self.watcher:
-            time.sleep(1.5)
-            self.board.display()
-
-        while turn < 10:
-            if turn % 2 == 1:
-                move = self.playerX.mover(self.board.positions)
-                if self.board.update(move, self.playerX.piece):
-                    move = int(move)
-                    temp = self.board.positions[:]
-                    temp[move] = "-"
-                    self.playerX.move_history[tuple(temp)] = move
-                else:
-                    continue
-            else:
-                move = self.playerO.mover(self.board.positions)
-                if self.board.update(move, self.playerO.piece):
-                    move = int(move)
-                    temp = self.board.positions[:]
-                    temp[move] = "-"
-                    self.playerO.move_history[tuple(temp)] = move
-                else:
-                    continue
-
-            self.win = self.board.is_win()
-            if self.watcher:
-                time.sleep(1.5)
-                self.board.display()
-            if self.win:
-                break
-            turn += 1
-
-        if self.watcher:
-            if not self.win:
-                print("It was a tie")
-            else:
-                print(self.win[1], " wins!!")
-
-        self.playerX.update(self.win)
-        self.playerO.update(self.win)
-
-        if self.watcher:
-            time.sleep(1.5)
-
-
 class Experiment:
-    def __init__(self, X, O, trials, logname=None, watcher=False):
+    def __init__(self, X, O, trials, logname=None, watcher=False, debug=True):
         self.trials = trials
         self.playerX = X
         self.playerO = O
@@ -286,6 +303,7 @@ class Experiment:
         self.ties = 0
         self.logname = logname
         self.watcher = watcher
+        self.debug = debug
 
     def logging(self):
         import os
@@ -308,8 +326,9 @@ class Experiment:
 
     def one_game(self):
         b = Board()
-        g = Game(b, self.playerX, self.playerO, watcher=self.watcher)
+        g = Game(b, self.playerX, self.playerO, watcher=self.watcher, debug=self.debug)
         g.play()
+            
         if not g.win:
             self.ties += 1
         elif g.win[1] == "X":
@@ -334,5 +353,5 @@ class Experiment:
 
 me = Agent(piece='X', mover='mine')
 you = Agent(piece='O', mover='random')
-E = Experiment(me, you, 1, watcher=True)
+E = Experiment(me, you, 1, watcher=True, debug=True)
 E.runExperiment()
