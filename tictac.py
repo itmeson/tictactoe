@@ -173,48 +173,15 @@ class Board:
     """Board handles the display of the tic-tac-toe board state.
     """
 
-    def __init__(self, turtle=False, size=200):
+    def __init__(self, size=200):
         self.positions = ["-"] * 10
-        self.turtle = turtle
-        if self.turtle:
 
-            self.size = size
-            self.squares = {
-                1: [-size, size],
-                2: [0, size],
-                3: [size, size],
-                4: [-size, 0],
-                5: [0, 0],
-                6: [size, 0],
-                7: [-size, -size],
-                8: [0, -size],
-                9: [size, -size],
-            }
-
-    def turtle_display(self):
-        import turtle
-        import turtle_board
-
-        turtle.reset()
-        turtle.speed(0)
-        turtle_board.board(size=200)
-
-        for i in range(1, 10):
-            if self.positions[i] == "X":
-                turtle_board.x(self.squares[i], self.size)
-            elif self.positions[i] == "O":
-                turtle_board.o(self.squares[i], self.size / 2)
-
-    def display(self, humanAgent=True, turtle=False):
+    def display(self, humanAgent=True):
         from os import system
-        #from IPython.display import clear_output
 
         system("clear")
-        #clear_output()
         for i in range(3):
             print("\t".join(self.positions[1 + i * 3 : 1 + i * 3 + 3]))
-        if self.turtle:
-            self.turtle_display()
 
     def update(self, move, piece):
         # check for clashes
@@ -365,7 +332,7 @@ class Experiment:
             self.file.close()
 
 
-me = Agent(piece='X', mover='menace')
+me = Agent(piece='X', mover='mine')
 you = Agent(piece='O', mover='random')
-E = Experiment(me, you, 10000, watcher=False, logname="log1.txt")
+E = Experiment(me, you, 1, watcher=True)
 E.runExperiment()
