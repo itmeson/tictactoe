@@ -111,46 +111,51 @@ class Agent:
     def menace_move(self, positions):
         """Move method for menace, allows the use of a playbook to select a move.
         """
-        from random import choice
+        #from random import choice
+        from random import choices
 
         tup_positions = tuple(positions)
         if tup_positions not in self.playbook:
             move = self.random_move(positions)
             return move
         else:
-            move = choice(self.playbook[tup_positions])
+            move = choices(list(self.playbook[tup_positions].keys()),
+                           weights = list(self.playbook[tup_positions].values()), 
+                           k=1)[0]
+            #move = choice(self.playbook[tup_positions])
             return move
 
     def update_menace(self, win):
         """Reinforcement update method for menace.
         """
+
+        from collections import OrderedDict
+
         if not win:  # it was a tie
             for position in self.move_history:
                 if position in self.playbook:
-                    self.playbook[position].extend([self.move_history[position]])
+                    self.playbook[position][self.move_history[position]] += 1
                 else:
-                    temp = [self.move_history[position]]
-                    not_filled = [i for i, x in enumerate(position) if x == "-"]
-                    temp.extend(not_filled[1:])
-                    self.playbook[position] = temp
-
+                    not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
+                    self.playbook[position] = OrderedDict([[x, 1] for x in not_filled])
+                    self.playbook[position][self.move_history[position]] += 1
         elif win[1] == self.piece:  # it was a win, reinforce all the moves
             for position in self.move_history:
                 if position in self.playbook:
-                    self.playbook[position].extend(3 * [self.move_history[position]])
+                    self.playbook[position][self.move_history[position]] += 3
                 else:
-                    temp = 2 * [self.move_history[position]]
-                    not_filled = [i for i, x in enumerate(position) if x == "-"]
-                    temp.extend(not_filled[1:])
-                    self.playbook[position] = temp
-
+                    not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
+                    self.playbook[position] = OrderedDict([[x, 1] for x in not_filled])
+                    self.playbook[position][self.move_history[position]] += 2
         elif win[1] != self.piece:  # it was a loss, prune once
             for position in self.move_history:
                 if position in self.playbook:
-                    if self.move_history[position] in self.playbook[position]:
-                        self.playbook[position].remove(self.move_history[position])
-                        if not self.playbook[position]:
-                            self.playbook.pop(position)
+                    if self.playbook[position][self.move_history[position]] > 1:
+                        self.playbook[position][self.move_history[position]] -= 1
+                else:
+                    not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
+                    self.playbook[position] = OrderedDict([[x, 2] for x in not_filled])
+                    self.playbook[position][self.move_history[position]] -= 1
 
     def random_move(self, positions):
         """Method for selecting a random option from the available legal moves.
@@ -185,6 +190,8 @@ class Board:
 
 
 class Game:
+    """Game controls the execution of a single game of tic-tac-toe"""
+
     def __init__(self, board, x, o, watcher=False, debug=True):
         self.positions = ["-"]*10
         self.board = board
@@ -237,12 +244,11 @@ class Game:
                 print("It was a tie")
             else:
                 print(self.win[1], " wins!!")
+            time.sleep(1.5)
 
         self.playerX.update(self.win)
         self.playerO.update(self.win)
 
-        if self.watcher:
-            time.sleep(1.5)
 
     def update(self, move, piece):
         # check for clashes
@@ -294,6 +300,9 @@ class Game:
 
 
 class Experiment:
+    """Experiment controls the execution of a collection of games between
+    two agents, potentially logging the results."""
+
     def __init__(self, X, O, trials, logname=None, watcher=False, debug=True):
         self.trials = trials
         self.playerX = X
@@ -351,7 +360,7 @@ class Experiment:
             self.file.close()
 
 
-me = Agent(piece='X', mover='mine')
-you = Agent(piece='O', mover='random')
-E = Experiment(me, you, 1, watcher=True, debug=True)
+me = Agent(piece='X', mover='menace')
+you = Agent(piece='O', mover='menace')
+E = Experiment(me, you, 1000, watcher=False, debug=True, logname="t.txt")
 E.runExperiment()
