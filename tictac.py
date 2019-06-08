@@ -3,7 +3,7 @@
 This module defines objects for use in experimenting with reinforcement learning
 as well as hand-coded bots for playing tic-tac-toe.
 
-If you want to change what kind of player your bot is 
+If you want to change what kind of player your bot is
 playing against, you need to change some lines
 at the very end of the program -- talk to me if you're not
 sure what to do.
@@ -11,12 +11,12 @@ sure what to do.
 
 def make_my_move(positions):
   """Your make_my_move function has to be able to read in the
-  state of the board in the positions variable, decided what 
+  state of the board in the positions variable, decided what
   move to make, and return an integer 1-9 as the space it wants
-  to move into.  
+  to move into.
 
   Some things to think about:
-  1. If you select a space that is already filled or isn't 
+  1. If you select a space that is already filled or isn't
   in the numbers 1-9, your program will crash because it
   will keep making the same bad choice over and over again.
   2. Think about how to simplify the problem with your initial
@@ -27,7 +27,7 @@ def make_my_move(positions):
 
   # not_filled will hold a list of the open board positions
   not_filled = [i for i, x in enumerate(positions) if x == "-"]
-  
+
   turn = 11-len (not_filled)
   # in here, `write stuff to figure out your move,
   # store it in a variable called "move".
@@ -36,31 +36,31 @@ def make_my_move(positions):
   move = 0
   if turn == 1:
     move = 1
-  
+
   elif turn == 3:
     if 3 in not_filled:
       move = 3
     else:
       move = 2
-  
-  elif turn == 5: 
-    
+
+  elif turn == 5:
+
     if positions[3] == "-":
       move = 3
     else:
       move = 2
-  
+
   elif turn == 7:
     if positions[1] == "-":
-     move = 1 
+     move = 1
     else:
        move = 7
-  
+
   # catch-all
   if move == 0:
     move = not_filled[1]
 
-  # you must have, at the end of the function, a line that 
+  # you must have, at the end of the function, a line that
   # "returns" the move you want to make
   return move
 
@@ -120,7 +120,7 @@ class Agent:
             return move
         else:
             move = choices(list(self.playbook[tup_positions].keys()),
-                           weights = list(self.playbook[tup_positions].values()), 
+                           weights = list(self.playbook[tup_positions].values()),
                            k=1)[0]
             #move = choice(self.playbook[tup_positions])
             return move
@@ -268,7 +268,7 @@ class Game:
         except:
             if self.debug:
                 self.debugHandler(move)
-                raise ValueError((move, self.positions, "Space was filled"))           
+                raise ValueError((move, self.positions, "Space was filled"))
             else:
                 print("Space filled, try again")
                 return False
@@ -334,15 +334,15 @@ class Experiment:
         os.fsync(self.file.fileno())
 
     def one_game(self):
-        b = Board()
-        g = Game(b, self.playerX, self.playerO, watcher=self.watcher, debug=self.debug)
-        g.play()
-            
-        if not g.win:
+        self.last_board = Board()
+        self.last_game = Game(self.last_board, self.playerX, self.playerO, watcher=self.watcher, debug=self.debug)
+        self.last_game.play()
+
+        if not self.last_game.win:
             self.ties += 1
-        elif g.win[1] == "X":
+        elif self.last_game.win[1] == "X":
             self.xwins += 1
-        elif g.win[1] == "O":
+        elif self.last_game.win[1] == "O":
             self.owins += 1
         if self.watcher:
             print("X Wins:\t", self.xwins)
@@ -360,7 +360,7 @@ class Experiment:
             self.file.close()
 
 
-me = Agent(piece='X', mover='menace')
-you = Agent(piece='O', mover='menace')
-E = Experiment(me, you, 1000, watcher=False, debug=True, logname="t.txt")
-E.runExperiment()
+# me = Agent(piece='X', mover='menace')
+# you = Agent(piece='O', mover='menace')
+# E = Experiment(me, you, 10, watcher=False, debug=True, logname="t.txt")
+# E.runExperiment()
