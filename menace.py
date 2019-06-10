@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 class Agent():
     def __init__(self, piece="X", mover="human", playbook=None):
         self.piece = piece
@@ -29,6 +31,10 @@ class Agent():
         """Dummy update method for non-learning agents"""
         pass
 
+class RandomAgent(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.mover = super().random_move
 
 class Human(Agent):
     def __init__(self, **kwargs):
@@ -80,8 +86,6 @@ class Menace(Agent):
         """Reinforcement update method for menace.
         """
 
-        from collections import OrderedDict
-
         if not win:  # it was a tie
             for position in self.move_history:
                 if position in self.playbook:
@@ -107,3 +111,26 @@ class Menace(Agent):
                     not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
                     self.playbook[position] = OrderedDict([[x, 2] for x in not_filled])
                     self.playbook[position][self.move_history[position]] -= 1
+
+class MyAgent(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(mover="nonhuman", **kwargs)
+
+    def mover(self, positions):
+        """This is the function for you to work on -- the last line
+        of the function should be a "return" that sends back a valid
+        move number.  The body of the function should use the tup_positions
+        of pieces to decide where to move next."""
+        
+        not_filled = [i for i, x in enumerate(positions) if x == "-"]
+        turn = 11-len (not_filled)
+        return not_filled[1]
+
+    def update(self, win):
+        for position in self.move_history:
+            if position in self.playbook:
+                self.playbook[position][self.move_history[position]] += 1
+            else:
+                not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
+                self.playbook[position] = OrderedDict([[x, 0] for x in not_filled])
+                self.playbook[position][self.move_history[position]] += 1
