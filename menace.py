@@ -120,8 +120,17 @@ class MyAgent(Agent):
         """This is the function for you to work on -- the last line
         of the function should be a "return" that sends back a valid
         move number.  The body of the function should use the tup_positions
-        of pieces to decide where to move next."""
-        
+        of pieces to decide where to move next.
+        Some things to think about:
+        1. If you select a space that is already filled or isn't
+        in the numbers 1-9, your program will crash because it
+        will keep making the same bad choice over and over again.
+        2. Think about how to simplify the problem with your initial
+        move choices so it is easier to think about what moves
+        your opponent might make.
+        3. Please talk to Mark if you're getting stuck.
+        """
+
         not_filled = [i for i, x in enumerate(positions) if x == "-"]
         turn = 11-len (not_filled)
         return not_filled[1]

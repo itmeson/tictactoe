@@ -9,82 +9,11 @@ at the very end of the program -- talk to me if you're not
 sure what to do.
 """
 
-def make_my_move(positions):
-  """Your make_my_move function has to be able to read in the
-  state of the board in the positions variable, decided what
-  move to make, and return an integer 1-9 as the space it wants
-  to move into.
+from collections import OrderedDict
 
-  Some things to think about:
-  1. If you select a space that is already filled or isn't
-  in the numbers 1-9, your program will crash because it
-  will keep making the same bad choice over and over again.
-  2. Think about how to simplify the problem with your initial
-  move choices so it is easier to think about what moves
-  your opponent might make.
-  3. Please talk to Mark if you're getting stuck.
-  """
-
-  # not_filled will hold a list of the open board positions
-  not_filled = [i for i, x in enumerate(positions) if x == "-"]
-
-  turn = 11-len (not_filled)
-  # in here, `write stuff to figure out your move,
-  # store it in a variable called "move".
-  # It is currently set to to pick the first open position
-  # on the board.
-  move = 0
-  if turn == 1:
-    move = 1
-
-  elif turn == 3:
-    if 3 in not_filled:
-      move = 3
-    else:
-      move = 2
-
-  elif turn == 5:
-
-    if positions[3] == "-":
-      move = 3
-    else:
-      move = 2
-
-  elif turn == 7:
-    if positions[1] == "-":
-     move = 1
-    else:
-       move = 7
-
-  # catch-all
-  if move == 0:
-    move = not_filled[1]
-
-  # you must have, at the end of the function, a line that
-  # "returns" the move you want to make
-  return move
-
-
-class Agent:
-    """An Agent is an object that knows how to produce valid moves in tic-tac-toe, given a valid state of the board.
-    """
-
+class Agent():
     def __init__(self, piece="X", mover="human", playbook=None):
         self.piece = piece
-        movers = {
-            "human": self.human_move,
-            "random": self.random_move,
-            "menace": self.menace_move,
-            "mine": make_my_move
-        }
-        updaters = {
-            "human": self.dummy,
-            "random": self.dummy,
-            "menace": self.update_menace,
-            "mine": self.dummy
-        }
-        self.mover = movers[mover]
-        self.update = updaters[mover]
         self.move_history = {}
         self.human = mover == "human"
         if not playbook:
@@ -92,12 +21,37 @@ class Agent:
         else:
             self.playbook = playbook
 
-    def dummy(self, win):
-        """The default update method for agents that do not learn.
+    def random_move(self, positions):
+        """Method for selecting a random option from the
+        available legal moves.
         """
+        from random import choice
+
+        not_filled = [i for i, x in enumerate(positions) if x == "-"]
+        return choice(not_filled[1:])
+
+    def quit(self):
+        """Method for ending a game.
+        """
+        raise Exception("User quit")
+        import sys
+        print(self.piece, " quits!")
+        sys.exit()
+
+    def update(self, win=None):
+        """Dummy update method for non-learning agents"""
         pass
 
-    def human_move(self, positions):
+class RandomAgent(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.mover = super().random_move
+
+class Human(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def mover(self, positions):
         """Update method for a human, allows the human to resign.
         """
         move_num = sum([1 if x != "-" else 0 for x in positions])
@@ -108,10 +62,25 @@ class Agent:
         else:
             return move
 
-    def menace_move(self, positions):
+class Menace(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(mover="nonhuman", **kwargs)
+
+    def position_frequency(self):
+        """Computes frequency of each position seen in the playbook"""
+        self.frequency = [[pos, sum([self.playbook[pos][x] for x in self.playbook[pos]])]
+                           for pos in self.playbook]
+        self.frequency.sort(key=lambda x: x[1], reverse=True)
+
+
+    def display_playbook(self, position):
+        new_positions = ['-'] + [str(self.playbook[position][i+1]) if piece == '-' else piece for i, piece in enumerate(position[1:])]
+        for i in range(3):
+            print("\t".join(new_positions[1 + i * 3 : 1 + i * 3 + 3]))
+
+    def mover(self, positions):
         """Move method for menace, allows the use of a playbook to select a move.
         """
-        #from random import choice
         from random import choices
 
         tup_positions = tuple(positions)
@@ -122,14 +91,11 @@ class Agent:
             move = choices(list(self.playbook[tup_positions].keys()),
                            weights = list(self.playbook[tup_positions].values()),
                            k=1)[0]
-            #move = choice(self.playbook[tup_positions])
             return move
 
-    def update_menace(self, win):
+    def update(self, win):
         """Reinforcement update method for menace.
         """
-
-        from collections import OrderedDict
 
         if not win:  # it was a tie
             for position in self.move_history:
@@ -157,21 +123,37 @@ class Agent:
                     self.playbook[position] = OrderedDict([[x, 2] for x in not_filled])
                     self.playbook[position][self.move_history[position]] -= 1
 
-    def random_move(self, positions):
-        """Method for selecting a random option from the available legal moves.
+class MyAgent(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(mover="nonhuman", **kwargs)
+
+    def mover(self, positions):
+        """This is the function for you to work on -- the last line
+        of the function should be a "return" that sends back a valid
+        move number.  The body of the function should use the tup_positions
+        of pieces to decide where to move next.
+        Some things to think about:
+        1. If you select a space that is already filled or isn't
+        in the numbers 1-9, your program will crash because it
+        will keep making the same bad choice over and over again.
+        2. Think about how to simplify the problem with your initial
+        move choices so it is easier to think about what moves
+        your opponent might make.
+        3. Please talk to Mark if you're getting stuck.
         """
-        from random import choice
 
         not_filled = [i for i, x in enumerate(positions) if x == "-"]
-        return choice(not_filled[1:])
+        turn = 11-len (not_filled)
+        return not_filled[1]
 
-    def quit(self):
-        """Method for ending a game.
-        """
-        import sys
-
-        print(self.piece, " quits!")
-        sys.exit()
+    def update(self, win):
+        for position in self.move_history:
+            if position in self.playbook:
+                self.playbook[position][self.move_history[position]] += 1
+            else:
+                not_filled = [i for i, x in enumerate(position) if x == "-"][1:]
+                self.playbook[position] = OrderedDict([[x, 0] for x in not_filled])
+                self.playbook[position][self.move_history[position]] += 1
 
 
 class Board:
@@ -360,7 +342,11 @@ class Experiment:
             self.file.close()
 
 
-# me = Agent(piece='X', mover='menace')
-# you = Agent(piece='O', mover='menace')
-# E = Experiment(me, you, 10, watcher=False, debug=True, logname="t.txt")
-# E.runExperiment()
+#me = Menace(piece='X')
+#you = Menace(piece='O')
+#E = Experiment(me, you, 10000, watcher=False, debug=True, logname="t.txt")
+#E.runExperiment()
+
+#player = Human(piece='X')
+#E2 = Experiment(player, you, 5, watcher=True, debug=True)
+#E2.runExperiment()
