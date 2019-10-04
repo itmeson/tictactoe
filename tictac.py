@@ -74,7 +74,15 @@ class Menace(Agent):
 
 
     def display_playbook(self, position):
-        new_positions = ['-'] + [str(self.playbook[position][i+1]) if piece == '-' else piece for i, piece in enumerate(position[1:])]
+        if position not in self.playbook:
+            new_positions = ['-'] + \
+                    ["1" if piece == '-' \
+                        else piece for i, piece in enumerate(position[1:])]
+        else:
+            new_positions = ['-'] + \
+                    [str(self.playbook[position][i+1]) \
+                            if piece == '-' \
+                            else piece for i, piece in enumerate(position[1:])]
         for i in range(3):
             print("\t".join(new_positions[1 + i * 3 : 1 + i * 3 + 3]))
 
@@ -82,7 +90,7 @@ class Menace(Agent):
         """Move method for menace, allows the use of a playbook to select a move.
         """
         from random import choices
-
+        self.display_playbook(tuple(positions))
         tup_positions = tuple(positions)
         if tup_positions not in self.playbook:
             move = self.random_move(positions)
@@ -317,7 +325,8 @@ class Experiment:
 
     def one_game(self):
         self.last_board = Board()
-        self.last_game = Game(self.last_board, self.playerX, self.playerO, watcher=self.watcher, debug=self.debug)
+        self.last_game = Game(self.last_board, self.playerX, self.playerO,
+                                watcher=self.watcher, debug=self.debug)
         self.last_game.play()
 
         if not self.last_game.win:
@@ -342,11 +351,12 @@ class Experiment:
             self.file.close()
 
 
-#me = Menace(piece='X')
-#you = Menace(piece='O')
-#E = Experiment(me, you, 10000, watcher=False, debug=True, logname="t.txt")
-#E.runExperiment()
+if __name__ == "__main__":
+    me = Menace(piece='X')
+    you = Menace(piece='O')
+    E = Experiment(me, you, 10, watcher=False, debug=True, logname="t.txt")
+    E.runExperiment()
 
-#player = Human(piece='X')
-#E2 = Experiment(player, you, 5, watcher=True, debug=True)
-#E2.runExperiment()
+    player = Human(piece='X')
+    E2 = Experiment(player, you, 5, watcher=True, debug=True)
+    E2.runExperiment()
