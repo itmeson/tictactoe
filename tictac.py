@@ -11,6 +11,7 @@ sure what to do.
 
 from collections import OrderedDict
 import pygame
+from pygame.locals import *
 
 class Agent():
     def __init__(self, piece="X", mover="human", playbook=None):
@@ -62,6 +63,56 @@ class Human(Agent):
             return 0
         else:
             return move
+
+class Pyg(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def mover(self, positions):
+        """Update method for a human using the pygame display,
+         allows the human to resign.
+        """
+        #move_num = sum([1 if x != "-" else 0 for x in positions])
+        #move = input("Move #" + str(move_num + 1) +':')
+        #if move == "Q":
+        #    self.quit()
+        #    return 0
+        #else:
+        #    return move
+    # determine where the user clicked and if the space is not already
+    # occupied, draw the appropriate piece there (X or O)
+    # ---------------------------------------------------------------
+    # board : the game board surface
+
+    #global grid, XO
+        running = 1
+        while (running == 1):
+            for event in pygame.event.get():
+                if event.type is QUIT:
+                    running = 0
+                elif event.type is MOUSEBUTTONDOWN:
+                    (mouseX, mouseY) = pygame.mouse.get_pos()
+                    (row, col) = self.board.boardPos (mouseX, mouseY)
+                    move = 3*row+col+1
+                    return move
+        # make sure no one's used this space
+        #if ((grid[row][col] == "X") or (grid[row][col] == "O")):
+            # this space is in use
+        #    return
+
+        # draw an X or O
+                    #self.board.drawMove (self.board.board, row, col, self.piece)
+
+        # toggle XO to the other player's move
+        #if (XO == "X"):
+        #    XO = "O"
+        #else:
+        #    XO = "X"
+
+
+
+
+
 
 class Menace(Agent):
     def __init__(self, **kwargs):
@@ -278,6 +329,32 @@ class Board:
         self.ttt.blit (self.board, (0, 0))
         pygame.display.flip()
 
+    def boardPos (self, mouseX, mouseY):
+        # given a set of coordinates from the mouse, determine which board space
+        # (row, column) the user clicked in.
+        # ---------------------------------------------------------------
+        # mouseX : the X coordinate the user clicked
+        # mouseY : the Y coordinate the user clicked
+
+        # determine the row the user clicked
+        if (mouseY < 100):
+            row = 0
+        elif (mouseY < 200):
+            row = 1
+        else:
+            row = 2
+
+        # determine the column the user clicked
+        if (mouseX < 100):
+            col = 0
+        elif (mouseX < 200):
+            col = 1
+        else:
+            col = 2
+
+        # return the tuple containg the row & column
+        return (row, col)
+
 
 
 class Game:
@@ -299,7 +376,7 @@ class Game:
 
         turn = 1
         if self.watcher:
-            time.sleep(1.5)
+            #time.sleep(1.5)
             self.board.display(self.positions)
 
         while turn < 10:
@@ -324,7 +401,8 @@ class Game:
 
             self.win = self.is_win()
             if self.watcher:
-                time.sleep(1.5)
+                if turn % 2 == 0:
+                    time.sleep(1.5)
                 self.board.display(self.positions)
             if self.win:
                 break
@@ -428,6 +506,8 @@ class Experiment:
 
     def one_game(self):
         self.last_board = Board(self.mode)
+        self.playerX.board = self.last_board
+        self.playerO.board = self.last_board
         self.last_game = Game(self.last_board, self.playerX, self.playerO,
                                 watcher=self.watcher, debug=self.debug)
         self.last_game.play()
@@ -461,7 +541,7 @@ if __name__ == "__main__":
                     mode="text_display", logname="t.txt")
     E.runExperiment()
 
-    player = Human(piece='X')
-    E2 = Experiment(player, you, 5, watcher=True, debug=True,
+    player = Pyg(piece='X')
+    E2 = Experiment(player, you, 5, watcher=True, debug=False,
                     mode="pyg_display")
     E2.runExperiment()
