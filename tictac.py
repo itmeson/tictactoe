@@ -10,6 +10,7 @@ sure what to do.
 """
 
 from collections import OrderedDict
+import pygame
 
 class Agent():
     def __init__(self, piece="X", mover="human", playbook=None):
@@ -168,15 +169,115 @@ class Board:
     """Board handles the display of the tic-tac-toe board state.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, mode="text_display"):
+        if mode == "text_display":
+            self.display = self.text_display
+        else:
+            self.display = self.pyg_display
+            pygame.init()
+            self.ttt = pygame.display.set_mode ((300, 325))
+            pygame.display.set_caption ('Tic-Tac-Toe')
+            self.board = self.initBoard ()
+            self.showBoard()
+            self.previousPositions = ['-']*10
 
-    def display(self, positions, humanAgent=True):
+    def text_display(self, positions, humanAgent=True):
         from os import system
 
         system("clear")
         for i in range(3):
             print("\t".join(positions[1 + i * 3 : 1 + i * 3 + 3]))
+
+    def pyg_display(self, positions):
+        new_move = [(i, x) for i,x in enumerate(positions)
+                    if x != self.previousPositions[i]]
+        if len(new_move) != 0:
+            boardRow = (new_move[0][0]-1) // 3
+            boardCol = (new_move[0][0] - 1) % 3
+            piece = new_move[0][1]
+            self.previousPositions = positions[:]
+            self.drawMove(self.board, boardRow, boardCol, piece)
+            self.showBoard()
+
+    def drawMove (self, board, boardRow, boardCol, Piece):
+        # draw an X or O (Piece) on the board in boardRow, boardCol
+        # ---------------------------------------------------------------
+        # board     : the game board surface
+        # boardRow,
+        # boardCol  : the Row & Col in which to draw the piece (0 based)
+        # Piece     : X or O
+
+        # determine the center of the square
+        centerX = ((boardCol) * 100) + 50
+        centerY = ((boardRow) * 100) + 50
+
+        # draw the appropriate piece
+        if (Piece == 'O'):
+            pygame.draw.circle (board, (0,0,0), (centerX, centerY), 44, 2)
+        else:
+            pygame.draw.line (board, (0,0,0), (centerX - 22, centerY - 22), \
+                             (centerX + 22, centerY + 22), 2)
+            pygame.draw.line (board, (0,0,0), (centerX + 22, centerY - 22), \
+                             (centerX - 22, centerY + 22), 2)
+
+        # mark the space as used
+        #grid [boardRow][boardCol] = Piece
+
+    def initBoard(self):
+        # initialize the board and return it as a variable
+        # ---------------------------------------------------------------
+        # ttt : a properly initialized pyGame display variable
+
+        # set up the background surface
+        background = pygame.Surface (self.ttt.get_size())
+        background = background.convert()
+        background.fill ((250, 250, 250))
+
+        # draw the grid lines
+        # vertical lines...
+        pygame.draw.line (background, (0,0,0), (100, 0), (100, 300), 2)
+        pygame.draw.line (background, (0,0,0), (200, 0), (200, 300), 2)
+
+        # horizontal lines...
+        pygame.draw.line (background, (0,0,0), (0, 100), (300, 100), 2)
+        pygame.draw.line (background, (0,0,0), (0, 200), (300, 200), 2)
+
+        # return the board
+        return background
+
+    def drawStatus (self, board):
+        # draw the status (i.e., player turn, etc) at the bottom of the board
+        # ---------------------------------------------------------------
+        # board : the initialized game board surface where the status will
+        #         be drawn
+
+        # gain access to global variables
+        #global XO, winner
+
+        # determine the status message
+        #if (winner is None):
+        #    message = XO + "'s turn"
+        #else:
+        #    message = winner + " won!"
+        message = "Choose a move"
+        # render the status message
+        font = pygame.font.Font(None, 24)
+        text = font.render(message, 1, (10, 10, 10))
+
+        # copy the rendered message onto the board
+        board.fill ((250, 250, 250), (0, 300, 300, 25))
+        board.blit(text, (10, 300))
+
+    def showBoard(self):
+        # redraw the game board on the display
+        # ---------------------------------------------------------------
+        # ttt   : the initialized pyGame display
+        # board : the game board surface
+
+        self.drawStatus (self.board)
+        self.ttt.blit (self.board, (0, 0))
+        pygame.display.flip()
+
 
 
 class Game:
@@ -293,7 +394,8 @@ class Experiment:
     """Experiment controls the execution of a collection of games between
     two agents, potentially logging the results."""
 
-    def __init__(self, X, O, trials, logname=None, watcher=False, debug=True):
+    def __init__(self, X, O, trials, logname=None, watcher=False,
+                    debug=True, mode="text_display"):
         self.trials = trials
         self.playerX = X
         self.playerO = O
@@ -303,6 +405,7 @@ class Experiment:
         self.logname = logname
         self.watcher = watcher
         self.debug = debug
+        self.mode = mode
 
     def logging(self):
         import os
@@ -324,7 +427,7 @@ class Experiment:
         os.fsync(self.file.fileno())
 
     def one_game(self):
-        self.last_board = Board()
+        self.last_board = Board(self.mode)
         self.last_game = Game(self.last_board, self.playerX, self.playerO,
                                 watcher=self.watcher, debug=self.debug)
         self.last_game.play()
@@ -354,9 +457,11 @@ class Experiment:
 if __name__ == "__main__":
     me = Menace(piece='X')
     you = Menace(piece='O')
-    E = Experiment(me, you, 10, watcher=False, debug=True, logname="t.txt")
+    E = Experiment(me, you, 10, watcher=False, debug=True,
+                    mode="text_display", logname="t.txt")
     E.runExperiment()
 
     player = Human(piece='X')
-    E2 = Experiment(player, you, 5, watcher=True, debug=True)
+    E2 = Experiment(player, you, 5, watcher=True, debug=True,
+                    mode="pyg_display")
     E2.runExperiment()
