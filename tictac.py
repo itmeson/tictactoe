@@ -142,7 +142,7 @@ class Menace(Agent):
         """Move method for menace, allows the use of a playbook to select a move.
         """
         from random import choices
-        self.display_playbook(tuple(positions))
+        #self.display_playbook(tuple(positions))
         tup_positions = tuple(positions)
         if tup_positions not in self.playbook:
             move = self.random_move(positions)
@@ -489,7 +489,7 @@ class Experiment:
         import os
 
         gp = self.xwins + self.owins + self.ties
-        self.file.write(
+        self.file.write(str(gp) + "," +
             str(self.xwins / gp)
             + ","
             + str(self.owins / gp)
