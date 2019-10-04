@@ -1,10 +1,16 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import sys
+
+if len(sys.argv) > 1:
+    fname = sys.argv[1]
+else:
+    fname = "long_train.txt"
 
 fig = plt.figure()  # an empty figure with no axes
 ax1 = fig.add_subplot(1,1,1)
 def animate(i):
-    pullData = open("long_train.txt","r").read()
+    pullData = open(fname,"r").read()
     dataArray = pullData.split('\n')
     xar = []
     xwins = []
