@@ -3,7 +3,7 @@ import pickle
 
 for i in range(100):
     opponent = "start"
-    while opponent not in "123":
+    while opponent not in "12345":
         opponent = input("Level 1, 2, 3, or 4?")
         print(opponent)
         if opponent == "1":
@@ -14,6 +14,8 @@ for i in range(100):
             fname = "o-10000.p"
         elif opponent == "3":
             fname = "o-100000.p"
+        elif opponent == "5":
+            fname = "o-vs-lex.p"
         else:
             print("Please select 1, 2, 3, or 4")
 
